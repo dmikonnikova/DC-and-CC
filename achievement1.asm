@@ -1,31 +1,32 @@
 .include "m8def.inc"
 
-;Константы для настройки USART
+;РљРѕРЅСЃС‚Р°РЅС‚С‹ РґР»СЏ РЅР°СЃС‚СЂРѕР№РєРё USART
 .equ BAUD = 115200
 .equ freq = 8000000
 .equ UBBRVALUEV = freq/(16*BAUD)-1
-;Настройка интревалов Таймеров
+
+;РќР°СЃС‚СЂРѕР№РєР° РёРЅС‚СЂРµРІР°Р»РѕРІ РўР°Р№РјРµСЂРѕРІ
 .equ TIMER1_INTERVAL = 235
 .equ TIMER2_INTERVAL = 250
 
 .cseg  
-;Основная программа
+;РћСЃРЅРѕРІРЅР°СЏ РїСЂРѕРіСЂР°РјРјР°
 .org 0x000                          
 rjmp MAIN  
-;Прерывание Timer0                         
+;РџСЂРµСЂС‹РІР°РЅРёРµ Timer0                         
 .org $009                            
 rjmp TIM0_OVF   
-;Прерывание Timer2                    
+;РџСЂРµСЂС‹РІР°РЅРёРµ Timer2                    
 .org $004                           
 rjmp TIM2_OVF                      
 
-;Слова
+;РЎР»РѕРІР°
 ping:
     .db "ping\r\n", 0 ,0
 pong:
     .db "pong\r\n", 0 ,0
 
-;Инициализация Стека
+;РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃС‚РµРєР°
 RESET:
     ldi r16, HIGH(RAMEND)
     out SPH, r16
@@ -33,60 +34,60 @@ RESET:
     out SPL, r16
 
 
-;Настройка Timer0
+;РќР°СЃС‚СЂРѕР№РєР° Timer0
 TIMER0_SET:
-	;Начальное значение Timer0 (Интервал)
+	;РќР°С‡Р°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ Timer0 (РРЅС‚РµСЂРІР°Р»)
     ldi r16, TIMER0_INTERVAL
     out TCNT0, r16    
-	;Запуск Timer0   
+	;Р—Р°РїСѓСЃРє Timer0   
     ldi r16, 0b111          
     out TCCR0, r16         
-	;Разрешить прерывания по переполнению Таймеров
+	;Р Р°Р·СЂРµС€РёС‚СЊ РїСЂРµСЂС‹РІР°РЅРёСЏ РїРѕ РїРµСЂРµРїРѕР»РЅРµРЅРёСЋ РўР°Р№РјРµСЂРѕРІ
     ldi r16, 0b101          
     out TIMSK, r16
     ret
 
-;Настройка Timer2
+;РќР°СЃС‚СЂРѕР№РєР° Timer2
 TIMER2_SET:
-	;Начальное значение Timer2 (Интервал)
+	;РќР°С‡Р°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ Timer2 (РРЅС‚РµСЂРІР°Р»)
     ldi r16, TIMER2_INTERVAL
     out TCNT2, r16
-	;Запуск Timer2
+	;Р—Р°РїСѓСЃРє Timer2
     ldi r16, 0b101          
     out TCCR2, r16  
-	;Разрешить прерывания по переполнению Таймеров     
+	;Р Р°Р·СЂРµС€РёС‚СЊ РїСЂРµСЂС‹РІР°РЅРёСЏ РїРѕ РїРµСЂРµРїРѕР»РЅРµРЅРёСЋ С‚Р°Р№РјРµСЂРѕРІ 
     ldi r16, 0x41
     out TIMSK, r16
     ret
 
-;Настройка USART
+;РќР°СЃС‚СЂРѕР№РєР° USART
 init_USART: 
-    ;Загрузка количества BAUD 
+    ;Р—Р°РіСЂСѓР·РєР° РєРѕР»РёС‡РµСЃС‚РІР° BAUD 
     ldi r16, high(UBBRVALUEV)
     out UBRRH, r16
 
     ldi r16, low(UBBRVALUEV)
     out UBRRL, r16
 
-    ldi r16, (1<<TXEN);разрешаем передачу
+	;Р Р°Р·СЂРµС€РµРЅРёРµ РЅР° РїРµСЂРµРґР°С‡Сѓ
+    ldi r16, (1<<TXEN)
     out UCSRB, r16
     ldi r16, (1<<URSEL)|(1<<UCSZ0)|(1<<UCSZ1)
     out UCSRC, r16
     ret
 
-;Отправка байта
+;РћС‚РїСЂР°РІРєР° Р±Р°Р№С‚Р°
 TRANSMIT_BYTE:
     sbis UCSRA, UDRE
     rjmp TRANSMIT_BYTE 
     out UDR, r17
     ret 
 
-;Отправка первого сообщения
+;РћС‚РїСЂР°РІРєР° РїРµСЂРІРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ
 START_SEND_PING:
-	;Установить время срабатывания (Интервал)
+	;РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РІСЂРµРјСЏ СЃСЂР°Р±Р°С‚С‹РІР°РЅРёСЏ (РРЅС‚РµСЂРІР°Р»)
     ldi r18, TIMER1_INTERVAL
     out TCNT0, r18
-
     ldi ZH, high(ping)
     ldi ZL, low(ping)
     add ZL,ZL
@@ -100,12 +101,10 @@ PING_SEND:
 ENDS_PING:
     ret
 
-;Отправка второго сообщения
+;РћС‚РїСЂР°РІРєР° РІС‚РѕСЂРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ
 START_SEND_PONG:
-	;Установить время срабатывания (Интервал)
     ldi r19, TIMER2_INTERVAL
     out TCNT2, r19
-
     ldi ZH, high(pong)
     ldi ZL, low(pong)
     add ZL,ZL
@@ -119,7 +118,7 @@ BYTE_PONG:
 ENDS_PONG:
     ret
     
-;Главная программа
+;Р“Р»Р°РІРЅР°СЏ РїСЂРѕРіСЂР°РјРјР°
 MAIN:
     rcall RESET
     rcall init_USART
@@ -129,13 +128,13 @@ MAIN:
 LOOP:
     rjmp LOOP
 
-;Прерывание Timer0
+;РџСЂРµСЂС‹РІР°РЅРёРµ Timer0
 TIM0_OVF:
     sei
     rcall START_SEND_PING
     reti
 
-;Прерывание Timer2
+;РџСЂРµСЂС‹РІР°РЅРёРµ Timer2
 TIM2_OVF:
     sei
     rcall START_SEND_PONG
